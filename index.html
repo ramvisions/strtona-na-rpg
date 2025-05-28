@@ -1,0 +1,586 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>RPG zaginiona puszcza</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(rgba(0,0,0,0.6), rgba(0,0,0,0.6)), url('png/tlo.png') no-repeat center center fixed;
+      background-size: cover;
+      color: #f0f0f0;
+      margin: 20px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 30px;
+    }
+
+    .rpg-description {
+      max-width: 800px;
+      background: rgba(0, 0, 0, 0.7);
+      padding: 20px 30px;
+      border-radius: 12px;
+      box-shadow: 0 0 20px #00ff99;
+      font-size: 1.2rem;
+      text-align: center;
+      color: #00ff99;
+    }
+
+    .characters-container {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 30px;
+      width: 100%;
+      max-width: 1200px;
+    }
+
+    .character {
+      position: relative;
+      width: 250px;
+      cursor: pointer;
+      overflow: visible;
+    }
+
+    .char-img {
+      width: 100%;
+      border-radius: 10px;
+      height: 200px;
+      object-fit: cover;
+      transition: transform 0.3s ease;
+      box-shadow: 0 0 8px #00ff99;
+      display: block;
+    }
+
+    .character:hover .char-img {
+      transform: translateY(-15px) scale(1.1);
+      box-shadow: 0 10px 20px #00ff99;
+      z-index: 2;
+      position: relative;
+    }
+
+    .info-box {
+      position: absolute;
+      top: 0;
+      left: 260px;
+      width: 200px;
+      background: rgba(0, 0, 0, 0.85);
+      border-radius: 8px;
+      padding: 15px;
+      box-shadow: 0 0 10px #00ff99;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.3s ease, transform 0.3s ease;
+      transform: translateX(-20px);
+    }
+
+    .character:hover .info-box {
+      opacity: 1;
+      pointer-events: auto;
+      transform: translateX(0);
+      z-index: 3;
+    }
+
+    .char-name {
+      font-size: 1.4rem;
+      font-weight: bold;
+      margin-bottom: 10px;
+      color: #00ff99;
+      text-align: center;
+    }
+
+    .char-desc {
+      font-size: 1rem;
+      margin-bottom: 10px;
+      text-align: center;
+    }
+
+    .stats p {
+      margin: 5px 0;
+      font-size: 0.9rem;
+    }
+
+    .caption {
+      margin-top: 10px;
+      font-size: 1rem;
+      color: #00ff99;
+      text-align: center;
+    }
+
+    .map-buttons {
+      display: flex;
+      gap: 40px;
+      margin-top: 40px;
+    }
+
+    .map-button, .dice-roll-button {
+      background: #00ff99;
+      color: #000;
+      padding: 15px 30px;
+      border-radius: 10px;
+      font-weight: bold;
+      cursor: pointer;
+      box-shadow: 0 0 10px #00ff99;
+      transition: background 0.3s ease, transform 0.3s ease;
+      user-select: none;
+    }
+
+    .map-button:hover, .dice-roll-button:hover {
+      background: #00cc7a;
+      transform: scale(1.05);
+    }
+
+    .map-container {
+      margin-top: 30px;
+      max-width: 800px;
+      width: 90%;
+      background: rgba(0,0,0,0.75);
+      border-radius: 15px;
+      padding: 20px;
+      box-shadow: 0 0 25px #00ff99;
+      color: #00ff99;
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      animation: fadeIn 0.5s ease forwards;
+    }
+
+    .map-container.active {
+      display: flex;
+    }
+
+    .map-image {
+      max-width: 100%;
+      border-radius: 10px;
+      box-shadow: 0 0 15px #00ff99;
+      margin-top: 15px;
+      animation: slideUp 0.5s ease forwards;
+    }
+
+    .back-button {
+      margin-top: 20px;
+      background: #00ff99;
+      color: #000;
+      padding: 10px 25px;
+      border-radius: 8px;
+      font-weight: bold;
+      cursor: pointer;
+      box-shadow: 0 0 8px #00ff99;
+      transition: background 0.3s ease, transform 0.3s ease;
+    }
+
+    .back-button:hover {
+      background: #00cc7a;
+      transform: scale(1.05);
+    }
+
+    .fullscreen-card {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background: rgba(0, 0, 0, 0.95);
+      z-index: 999;
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      animation: zoomIn 0.5s ease-out forwards;
+    }
+
+    .fullscreen-card.active {
+      display: flex;
+    }
+
+    .fullscreen-card .char-name {
+      font-size: 2rem;
+    }
+
+    @keyframes fadeIn {
+      from {opacity: 0;}
+      to {opacity: 1;}
+    }
+
+    @keyframes slideUp {
+      from {opacity: 0; transform: translateY(30px);}
+      to {opacity: 1; transform: translateY(0);}
+    }
+
+    @keyframes zoomIn {
+      from {transform: scale(0.7); opacity: 0;}
+      to {transform: scale(1); opacity: 1;}
+    }
+
+    .dice-section {
+      margin-top: 20px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .dice-result {
+      font-size: 1.2rem;
+      color: #00ff99;
+    }
+.neon-button {
+  background-color: #00ff00;
+  color: black;
+  border: none;
+  padding: 10px 20px;
+  font-size: 16px;
+  border-radius: 8px;
+  cursor: pointer;
+  box-shadow: 0 0 10px #00ff00, 0 0 20px #00ff00, 0 0 40px #00ff00;
+  transition: all 0.2s ease-in-out;
+}
+
+.neon-button:hover {
+  transform: scale(1.05);
+  box-shadow: 0 0 20px #00ff00, 0 0 30px #00ff00, 0 0 60px #00ff00;
+}
+
+  </style>
+</head>
+<body>
+
+<button id="sound-button" class="neon-button">nie klikaj! (serio)</button>
+
+ <audio id="bg-music" src="audio/muzyka.mp3" loop>
+  Twoja przeglądarka nie obsługuje elementu audio.
+</audio>
+<!-- Przycisk do sterowania muzyką -->
+<button id="music-toggle" class="music-toggle-btn">Włącz muzykę</button>
+
+<style>
+  .music-toggle-btn {
+    background: #00ff99;
+    color: #000;
+    padding: 12px 28px;
+    border: none;
+    border-radius: 12px;
+    font-weight: bold;
+    cursor: pointer;
+    box-shadow: 0 0 12px #00ff99;
+    transition: background 0.3s ease, transform 0.3s ease;
+    user-select: none;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  }
+
+  .music-toggle-btn:hover {
+    background: #00cc7a;
+    transform: scale(1.07);
+  }
+.side-panel {
+  position: fixed;
+  top: 0;
+  right: -350px; /* ukryty po prawej */
+  width: 350px;
+  height: 100vh;
+  background: rgba(0, 0, 0, 0.95);
+  box-shadow: -5px 0 20px #00ff99;
+  color: #00ff99;
+  display: flex;
+  flex-direction: column;
+  padding: 20px;
+  transition: right 0.4s ease;
+  z-index: 1000;
+}
+
+.side-panel.active {
+  right: 0; /* wysuwamy panel */
+}
+
+.side-panel-img {
+  width: 100%;
+  border-radius: 10px;
+  margin-bottom: 15px;
+  object-fit: cover;
+  height: 250px;
+  box-shadow: 0 0 10px #00ff99;
+}
+
+.side-panel-info {
+  font-size: 1rem;
+  overflow-y: auto;
+  flex-grow: 1;
+}
+
+.close-btn {
+  align-self: flex-end;
+  background: transparent;
+  border: none;
+  font-size: 2rem;
+  color: #00ff99;
+  cursor: pointer;
+  margin-bottom: 15px;
+  font-weight: bold;
+  user-select: none;
+}
+
+.close-btn:hover {
+  color: #00cc7a;
+}
+
+</style>
+
+  <div class="rpg-description">
+   opis sie zmieni!!! po pierwszej kampanii
+  </div>
+
+  <div class="characters-container" id="characters-container">
+<div class="character" data-sound="audio/dzwiek1.mp3" onclick="showFullscreen(this)">
+      <img src="png/antek.png" alt="znyger" class="char-img" />
+      <div class="info-box">
+        <div class="char-name">znyger</div>
+        <div class="char-desc">przykład opisu</div>
+        <div class="stats">
+          <p>staty</p>
+          <p>staty</p>
+          <p>staty</p>
+          <p>staty</p>
+          <p>staty</p>
+        </div>
+      </div>
+      <div class="caption">znyger</div>
+    </div>
+<div class="character" data-sound="audio/dzwiek2.mp3" onclick="showFullscreen(this)">
+      <img src="png/antek6b.png" alt="imie" class="char-img" />
+      <div class="info-box">
+        <div class="char-name">imie</div>
+        <div class="char-desc">opis przykładowy</div>
+        <div class="stats">
+          <p>staty</p>
+          <p>staty</p>
+          <p>staty</p>
+          <p>staty</p>
+          <p>staty</p>
+        </div>
+      </div>
+      <div class="caption">imie</div>
+    </div>
+
+<div class="character" data-sound="audio/dzwiek3.mp3" onclick="showFullscreen(this)">
+      <img src="png/adamf.png" alt="tajemniczy" class="char-img" />
+      <div class="info-box">
+        <div class="char-name">tajemniczy</div>
+        <div class="char-desc">opis</div>
+        <div class="stats">
+          <p>staty</p>
+          <p>staty</p>
+          <p>staty</p>
+          <p>staty</p>
+          <p>staty</p>
+        </div>
+      </div>
+      <div class="caption">tajemniczy</div>
+    </div>
+
+<div class="character" data-sound="audio/dzwiek4.mp3" onclick="showFullscreen(this)">
+      <img src="png/adamd.png" alt="imie" class="char-img" />
+      <div class="info-box">
+        <div class="char-name">imie</div>
+        <div class="char-desc">opis pojawi sie jak napiszesz Rochowi!!!</div>
+        <div class="stats">
+          <p>staty</p>
+          <p>staty</p>
+          <p>staty</p>
+          <p>staty</p>
+          <p>staty</p>
+        </div>
+      </div>
+      <div class="caption">imie</div>
+    </div>
+
+	<div class="character" data-sound="audio/dzwiek5.mp3" onclick="showFullscreen(this)">
+      <img src="png/henryks.png" alt="imie" class="char-img" />
+      <div class="info-box">
+        <div class="char-name">imie</div>
+        <div class="char-desc">opis</div>
+        <div class="stats">
+          <p>staty</p>
+          <p>staty</p>
+          <p>staty</p>
+          <p>staty</p>
+          <p>staty</p>
+        </div>
+      </div>
+      <div class="caption">imie</div>
+    </div>
+
+  </div>
+
+  <div class="map-buttons" id="map-buttons">
+    <div class="map-button" data-map="cities">Mapa z miastami</div>
+    <div class="map-button" data-map="lands">Mapa z krainami</div>
+    <div class="dice-roll-button" onclick="rollDice()">Rzut kością</div>
+  </div>
+
+  <div class="dice-section">
+    <label for="dice-type">Wybierz kość:</label>
+    <select id="dice-type">
+      <option value="4">d4</option>
+      <option value="6" selected>d6</option>
+      <option value="8">d8</option>
+      <option value="10">d10</option>
+      <option value="12">d12</option>
+      <option value="20">d20</option>
+      <option value="100">d100</option>
+    </select>
+    <div class="dice-result" id="dice-result">Wynik: -</div>
+  </div>
+
+  <div class="map-container" id="map-container">
+    <div id="map-title" style="font-size: 1.5rem; font-weight: bold; text-align: center;"></div>
+    <img id="map-image" class="map-image" src="" alt="Mapa RPG" />
+    <div class="back-button" id="back-button">Powrót</div>
+  </div>
+
+  <div class="fullscreen-card" id="fullscreen-card" onclick="hideFullscreen()"></div>
+
+<div id="side-panel" class="side-panel">
+  <div class="side-panel-content">
+    <button id="close-side-panel" class="close-btn">&times;</button>
+    <img id="side-panel-img" src="" alt="Postać" class="side-panel-img" />
+    <div id="side-panel-info" class="side-panel-info"></div>
+  </div>
+</div>
+
+  <script>
+    const maps = {
+      cities: { title: 'Mapa z miastami', img: 'png/mapa_miast.png' },
+      lands: { title: 'Mapa z krainami', img: 'png/mapa_krain.png' }
+    };
+
+    const mapButtons = document.querySelectorAll('.map-button');
+    const mapContainer = document.getElementById('map-container');
+    const charactersContainer = document.getElementById('characters-container');
+    const mapButtonsContainer = document.getElementById('map-buttons');
+    const mapTitle = document.getElementById('map-title');
+    const mapImage = document.getElementById('map-image');
+    const backButton = document.getElementById('back-button');
+    const fullscreenCard = document.getElementById('fullscreen-card');
+
+    mapButtons.forEach(button => {
+      button.addEventListener('click', () => {
+        const selectedMap = button.getAttribute('data-map');
+        const mapData = maps[selectedMap];
+        if (mapData) {
+          charactersContainer.style.display = 'none';
+          mapButtonsContainer.style.display = 'none';
+          mapTitle.textContent = mapData.title;
+          mapImage.src = mapData.img;
+          mapImage.alt = mapData.title;
+          mapContainer.classList.add('active');
+        }
+      });
+    });
+
+    backButton.addEventListener('click', () => {
+      charactersContainer.style.display = 'flex';
+      mapButtonsContainer.style.display = 'flex';
+      mapContainer.classList.remove('active');
+    });
+
+    function rollDice() {
+      const type = parseInt(document.getElementById('dice-type').value);
+      const result = Math.floor(Math.random() * type) + 1;
+      document.getElementById('dice-result').textContent = `Wynik: ${result}`;
+    }
+
+let currentSound = null; // <-- globalna zmienna
+
+function showFullscreen(el) {
+  const imgSrc = el.querySelector('.char-img').src;
+  const name = el.querySelector('.char-name').textContent;
+  const desc = el.querySelector('.char-desc').textContent;
+  const stats = el.querySelector('.stats').innerHTML;
+
+  // Jeśli coś już gra, zatrzymaj to
+  if (currentSound) {
+    currentSound.pause();
+    currentSound.currentTime = 0;
+  }
+
+  // Nowy dźwięk
+  const soundSrc = el.getAttribute('data-sound');
+  if (soundSrc) {
+    currentSound = new Audio(soundSrc);
+    currentSound.play().catch(() => {
+      console.warn('Nie udało się odtworzyć dźwięku');
+    });
+  }
+
+  // Wypełnianie i pokazywanie panelu
+  const sidePanel = document.getElementById('side-panel');
+  const sidePanelImg = document.getElementById('side-panel-img');
+  const sidePanelInfo = document.getElementById('side-panel-info');
+
+  sidePanelImg.src = imgSrc;
+  sidePanelImg.alt = name;
+  sidePanelInfo.innerHTML = `
+    <h2>${name}</h2>
+    <p>${desc}</p>
+    <div>${stats}</div>
+  `;
+
+  sidePanel.classList.add('active');
+}
+
+
+
+
+    function hideFullscreen() {
+      fullscreenCard.classList.remove('active');
+    }
+
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        hideFullscreen();
+        mapContainer.classList.remove('active');
+        charactersContainer.style.display = 'flex';
+        mapButtonsContainer.style.display = 'flex';
+      }
+    });
+  </script>
+<script>
+  const music = document.getElementById('bg-music');
+  const toggleBtn = document.getElementById('music-toggle');
+
+  toggleBtn.addEventListener('click', () => {
+    if (music.paused) {
+      music.play();
+      toggleBtn.textContent = 'Wyłącz muzykę';
+    } else {
+      music.pause();
+      toggleBtn.textContent = 'Włącz muzykę';
+    }
+  });
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') {
+    const sidePanel = document.getElementById('side-panel');
+    if (sidePanel.classList.contains('active')) {
+      sidePanel.classList.remove('active');
+
+      if (currentSound) {
+        currentSound.pause();
+        currentSound.currentTime = 0;
+        currentSound = null;
+      }
+    }
+  }
+});
+const neonButton = document.getElementById('sound-button');
+
+neonButton.addEventListener('click', () => {
+  const sound = new Audio('audio/dzwiek6.mp3'); // <- zmień na swoją ścieżkę
+  sound.play();
+});
+
+</script>
+
+</body>
+</html>
